@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -11,6 +11,8 @@ interface AuthFormProps {
 
 export default function AuthForm({ type, userType }: AuthFormProps) {
   const router = useRouter();
+  // Add a mounted state to handle hydration issues
+  const [mounted, setMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,6 +37,11 @@ export default function AuthForm({ type, userType }: AuthFormProps) {
   const [contactPhone, setContactPhone] = useState('');
   const [description, setDescription] = useState('');
   const [servicesOffered, setServicesOffered] = useState('');
+
+  // Set mounted state to true after component mounts
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   async function handleGoogleLogin() {
     if (!isCustomer) {
@@ -130,7 +137,6 @@ export default function AuthForm({ type, userType }: AuthFormProps) {
       }
       
       // Redirect based on user type and action
-      // Inside handleSubmit function in AuthForm.tsx
       if (isLogin) {
         const data = await response.json();
         if (data.user.user_type === 'customer') {
@@ -149,6 +155,15 @@ export default function AuthForm({ type, userType }: AuthFormProps) {
     } finally {
       setIsLoading(false);
     }
+  }
+
+  // Don't render the form until after client-side hydration is complete
+  if (!mounted) {
+    return <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-md">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold">Loading...</h1>
+      </div>
+    </div>;
   }
 
   return (

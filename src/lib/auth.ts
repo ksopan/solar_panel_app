@@ -399,10 +399,11 @@ export async function getCurrentUser(db: DrizzleD1Database, sessionToken: string
 }
 
 // Helper functions for server components
-export async function getSessionToken(): Promise<string | undefined> {
-  // Using the synchronous version of cookies() is deprecated in Next.js
+// Replace the getSessionToken function in src/lib/auth.ts with this
+export function getSessionToken(): string | undefined {
+  // Using the synchronous version of cookies() which is fine in Next.js App Router
   const cookieStore = cookies();
-  // Fix: Just don't try to await the get() method, it's not async
+  // Don't use await here as this is not an async function
   const cookie = cookieStore.get('session_token');
   return cookie?.value;
 }
