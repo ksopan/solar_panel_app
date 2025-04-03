@@ -1,141 +1,168 @@
-# Solar Panel Vendor Selection Application
+# Solar Panel Vendor Selection App
 
 A web application to help customers select the best solar panel installation company for their home or business.
 
-## Overview
+## Features Implemented
 
-This application connects customers looking to install solar panels with vendors who provide solar panel installation services. It features a quotation system where customers can request quotes from multiple vendors and compare them using analytical tools to make informed decisions.
-
-## Features
-
-### For Customers
-- Register via manual registration or Gmail
-- Submit detailed quotation requests with property and energy information
-- View quotations from multiple vendors
-- Compare quotations with visual analytics (price, warranty, etc.)
-- Receive notifications when vendors submit quotations
-
-### For Vendors
-- Register and create a company profile
-- View quotation requests from customers
-- Submit detailed quotations with pricing and specifications
-- Upload PDF documents with detailed proposals
-- Track quotation status (submitted, viewed, accepted, rejected)
-
-### For Administrators
-- Manage user accounts (customers and vendors)
-- Oversee all quotation requests and submissions
-- Monitor system performance and activity
-- Verify vendor accounts
+- **Local SQLite Database**: Set up for development with proper schema and migrations
+- **User Authentication System**: 
+  - Regular email/password authentication for all user types
+  - Google/Gmail sign-up functionality for customers
+  - Session management and protected routes
+- **User Registration**:
+  - Customer registration with personal details
+  - Vendor registration with company information
+- **Quotation System**:
+  - Customers can submit quotation requests with installation details
+  - Vendors can view open requests and submit quotations
+  - Customers can view received quotations
+- **Dashboard Interfaces**:
+  - Customer dashboard to manage quotation requests and view vendor responses
+  - Vendor dashboard to view open requests and track submitted quotations
 
 ## Technology Stack
 
-- **Frontend**: Next.js with Tailwind CSS
-- **Backend**: Next.js API routes
-- **Database**: Cloudflare D1 (SQLite)
-- **Authentication**: Custom JWT-based authentication with Gmail integration
-- **File Storage**: Mock storage system (would use AWS S3 or similar in production)
-- **Visualization**: Recharts for data visualization
+- **Frontend**: Next.js 15 with React 18
+- **UI Components**: Shadcn UI components
+- **Authentication**: NextAuth.js with Google provider
+- **Database**: SQLite (local development), Cloudflare D1 (production)
+- **ORM**: Drizzle ORM
+- **Deployment**: Cloudflare Workers (configured but not deployed)
 
-## Getting Started
+## Local Development Setup
 
 ### Prerequisites
-- Node.js 20.x or higher
-- pnpm package manager
 
-### Installation
+- Node.js (v18 or higher)
+- npm or pnpm
+- SQLite3
 
-1. Clone the repository
-```bash
-git clone https://github.com/your-username/solar-panel-app.git
-cd solar-panel-app
-```
+### Installation Steps
 
-2. Install dependencies
-```bash
-pnpm install
-```
+1. Clone the repository:
+   ```
+   git clone https://github.com/ksopan/solar_panel_app.git
+   cd solar_panel_app
+   ```
 
-3. Set up the database
-```bash
-wrangler d1 execute DB --local --file=migrations/0001_initial.sql
-```
+2. Install dependencies:
+   ```
+   npm install
+   ```
+   or with pnpm:
+   ```
+   pnpm install
+   ```
 
-4. Start the development server
-```bash
-pnpm dev
-```
+3. Set up environment variables:
+   Create a `.env.local` file in the root directory with the following variables:
+   ```
+   NEXTAUTH_URL=http://localhost:3000
+   NEXTAUTH_SECRET=your-secret-key-for-development
+   
+   # For Google authentication (required for Gmail sign-up)
+   GOOGLE_CLIENT_ID=your-google-client-id
+   GOOGLE_CLIENT_SECRET=your-google-client-secret
+   ```
 
-5. Open your browser and navigate to `http://localhost:3000`
+4. Initialize the database:
+   ```
+   mkdir -p database
+   sqlite3 database/solar_panel.db < migrations/0003_full_schema.sql
+   ```
 
-## Deployment
+5. Start the development server:
+   ```
+   npm run dev
+   ```
+   or with pnpm:
+   ```
+   pnpm dev
+   ```
 
-### Production Deployment
+6. Open your browser and navigate to `http://localhost:3000`
 
-To deploy the application to production:
+## Cloudflare Deployment
 
-```bash
-pnpm build
-```
+To deploy the application to Cloudflare:
 
-Then deploy the application using your preferred hosting provider. The application is compatible with Cloudflare Pages, Vercel, or any other Next.js-compatible hosting service.
+1. Set up a Cloudflare account and create a D1 database
+
+2. Update the `wrangler.toml` file with your database details:
+   ```toml
+   [[d1_databases]]
+   binding = "DB"
+   database_name = "your-database-name"
+   database_id = "your-database-id"
+   ```
+
+3. Build and deploy the application:
+   ```
+   npm run build:worker
+   npx wrangler deploy
+   ```
 
 ## User Guide
 
-### Customer Guide
+### Customer Flow
 
-1. **Registration**
-   - Sign up using the registration form or Gmail
-   - Complete your profile with personal and property information
+1. Register as a customer (with email/password or Google sign-in)
+2. Navigate to the customer dashboard
+3. Click "Request New Quotation" to submit details for a solar panel installation
+4. View received quotations from vendors
+5. Compare quotations and select the best vendor
 
-2. **Requesting Quotations**
-   - Navigate to the "Request Quotation" page
-   - Fill in details about your property and energy needs
-   - Submit the request to notify vendors
+### Vendor Flow
 
-3. **Viewing and Comparing Quotations**
-   - Check your dashboard for notifications about new quotations
-   - View individual quotations with pricing and specifications
-   - Use the comparison tool to analyze multiple quotations
-   - Download detailed PDF proposals from vendors
+1. Register as a vendor (email/password only)
+2. Navigate to the vendor dashboard
+3. View open quotation requests from customers
+4. Submit quotations with pricing and installation details
+5. Track the status of submitted quotations
 
-### Vendor Guide
+## Implementation Details
 
-1. **Registration**
-   - Sign up using the vendor registration form
-   - Complete your company profile with business details
+### Database Structure
 
-2. **Managing Quotation Requests**
-   - View open quotation requests from customers
-   - Access detailed information about each request
+The application uses a relational database with the following main tables:
+- `users`: Base table for all user types
+- `customers`: Extended information for customer users
+- `vendors`: Extended information for vendor users
+- `quotation_requests`: Customer requests for solar panel installations
+- `vendor_quotations`: Vendor responses to quotation requests
+- `notifications`: System notifications for users
+- `sessions`: Authentication sessions
 
-3. **Submitting Quotations**
-   - Fill in the quotation form with pricing and specifications
-   - Upload a detailed PDF proposal (optional)
-   - Submit the quotation to notify the customer
+### Authentication System
 
-### Administrator Guide
+- JWT-based authentication using NextAuth.js
+- Google OAuth integration for customer sign-up
+- Role-based access control (customer, vendor, admin)
 
-1. **User Management**
-   - View and manage customer accounts
-   - Verify and manage vendor accounts
+### API Endpoints
 
-2. **Quotation Oversight**
-   - Monitor all quotation requests and submissions
-   - View detailed information about each request and quotation
+- `/api/auth/[...nextauth]`: Authentication endpoints
+- `/api/auth/register`: User registration
+- `/api/quotations/request`: Submit quotation requests
+- `/api/quotations/customer`: Get customer's quotation requests
+- `/api/quotations/open`: Get open quotation requests for vendors
+- `/api/quotations/vendor`: Get vendor's submitted quotations
+- `/api/quotations/submit`: Submit vendor quotations
 
-3. **System Management**
-   - Monitor system performance and activity
-   - Manage system settings
+## Future Enhancements
+
+- File upload functionality for quotation PDFs
+- Email notifications for new quotations and requests
+- Advanced dashboard analytics for comparing quotations
+- Admin interface for managing users and quotations
+- Mobile-responsive design improvements
+
+## Troubleshooting
+
+- If you encounter database connection issues, ensure the SQLite database file exists at `database/solar_panel.db`
+- For authentication issues, verify your environment variables are correctly set
+- For Google sign-in problems, make sure your Google OAuth credentials are properly configured
 
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Acknowledgements
-
-- Next.js team for the excellent framework
-- Tailwind CSS for the styling utilities
-- Recharts for the visualization components
-- Cloudflare for the database and hosting infrastructure
-# solar_panel_app

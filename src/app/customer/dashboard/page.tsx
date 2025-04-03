@@ -1,166 +1,258 @@
-import { Metadata } from 'next';
-import Link from 'next/link';
-import { getDatabase } from '@/lib/db';
-import { requireAuth } from '@/lib/auth';
-import { getQuotationRequestsByCustomer, getUnreadNotificationsCount } from '@/lib/quotation';
+"use client";
 
-export const metadata: Metadata = {
-  title: 'Customer Dashboard - Solar Panel Vendor Selection',
-  description: 'View your quotation requests and analyze vendor quotations',
-};
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
-export default async function CustomerDashboardPage() {
-  // Server-side authentication check
-  const db = getDatabase();
-  const user = await requireAuth(db, ['customer']);
+export default function CustomerDashboard() {
+  const { data: session } = useSession();
+  const [quotationRequests, setQuotationRequests] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   
-  // Get customer's quotation requests
-  const requestsResult = await getQuotationRequestsByCustomer(db, user.id);
-  const requests = requestsResult.success ? requestsResult.requests : [];
-  
-  // Get unread notifications count
-  const notificationsResult = await getUnreadNotificationsCount(db, user.id);
-  const unreadNotifications = notificationsResult.success ? notificationsResult.count : 0;
-  
-  // Get count of received quotations
-  const quotationsResult = await db.prepare(`
-    SELECT COUNT(*) as count FROM vendor_quotations vq
-    JOIN quotation_requests qr ON vq.quotation_request_id = qr.id
-    WHERE qr.customer_id = ?
-  `).bind(user.id).first<{ count: number }>();
-  
-  const quotationsCount = quotationsResult?.count || 0;
-  
-  // Get customer profile
-  const profile = await db.prepare(
-    'SELECT * FROM customers WHERE id = ?'
-  ).bind(user.id).first<any>();
-  
-  return (
-    <div className="container p-6 mx-auto">
-      <h1 className="mb-8 text-3xl font-bold">Customer Dashboard</h1>
+  // Form state for new quotation request
+  const [address, setAddress] = useState("");
+  const [numDevices, setNumDevices] = useState("");
+  const [monthlyBill, setMonthlyBill] = useState("");
+  const [additionalRequirements, setAdditionalRequirements] = useState("");
+
+  useEffect(() => {
+    // Fetch customer's quotation requests
+    const fetchQuotationRequests = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/quotations/customer');
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch quotation requests');
+        }
+        
+        const data = await response.json();
+        setQuotationRequests(data.quotationRequests);
+      } catch (error) {
+        console.error('Error fetching quotation requests:', error);
+        setError('Failed to load your quotation requests. Please try again later.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (session?.user) {
+      fetchQuotationRequests();
+    }
+  }, [session]);
+
+  const handleSubmitQuotationRequest = async (e) => {
+    e.preventDefault();
+    
+    try {
+      const response = await fetch('/api/quotations/request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          address,
+          num_electronic_devices: parseInt(numDevices),
+          monthly_electricity_bill: parseFloat(monthlyBill),
+          additional_requirements: additionalRequirements,
+        }),
+      });
       
-      <div className="grid gap-6 mb-8 md:grid-cols-3">
-        <div className="p-6 bg-white rounded-lg shadow">
-          <h2 className="mb-2 text-lg font-semibold">My Requests</h2>
-          <p className="text-3xl font-bold text-blue-600">{requests.length}</p>
-          <p className="mt-2 text-sm text-gray-600">Quotation requests you've submitted</p>
-        </div>
-        
-        <div className="p-6 bg-white rounded-lg shadow">
-          <h2 className="mb-2 text-lg font-semibold">Received Quotations</h2>
-          <p className="text-3xl font-bold text-green-600">{quotationsCount}</p>
-          <p className="mt-2 text-sm text-gray-600">Quotations from vendors</p>
-        </div>
-        
-        <div className="p-6 bg-white rounded-lg shadow">
-          <h2 className="mb-2 text-lg font-semibold">Quick Actions</h2>
-          <div className="space-y-2">
-            <Link 
-              href="/customer/request-quotation" 
-              className="block w-full px-4 py-2 text-center text-white bg-blue-600 rounded-md hover:bg-blue-700"
-            >
-              Request New Quotation
-            </Link>
-            <Link 
-              href="/customer/quotations" 
-              className="block w-full px-4 py-2 text-center text-white bg-green-600 rounded-md hover:bg-green-700"
-            >
-              View My Quotations
-            </Link>
-            {unreadNotifications > 0 && (
-              <Link 
-                href="/customer/notifications" 
-                className="block w-full px-4 py-2 text-center text-white bg-yellow-600 rounded-md hover:bg-yellow-700"
-              >
-                View Notifications ({unreadNotifications})
-              </Link>
-            )}
-          </div>
-        </div>
+      if (!response.ok) {
+        throw new Error('Failed to submit quotation request');
+      }
+      
+      // Reset form and close dialog
+      setAddress("");
+      setNumDevices("");
+      setMonthlyBill("");
+      setAdditionalRequirements("");
+      setIsDialogOpen(false);
+      
+      // Refresh quotation requests
+      const updatedResponse = await fetch('/api/quotations/customer');
+      const updatedData = await updatedResponse.json();
+      setQuotationRequests(updatedData.quotationRequests);
+      
+    } catch (error) {
+      console.error('Error submitting quotation request:', error);
+      setError('Failed to submit your quotation request. Please try again.');
+    }
+  };
+
+  if (!session) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Card>
+          <CardHeader>
+            <CardTitle>Access Denied</CardTitle>
+            <CardDescription>Please sign in to view your dashboard</CardDescription>
+          </CardHeader>
+        </Card>
       </div>
-      
-      {profile && !profile.profile_complete && (
-        <div className="p-4 mb-8 text-yellow-800 bg-yellow-100 rounded-md">
-          <h3 className="text-lg font-medium">Complete Your Profile</h3>
-          <p className="mt-1">
-            Please complete your profile information to help vendors provide more accurate quotations.
-          </p>
-          <Link 
-            href="/customer/profile" 
-            className="inline-block px-4 py-2 mt-2 text-sm text-white bg-yellow-600 rounded-md hover:bg-yellow-700"
-          >
-            Complete Profile
-          </Link>
-        </div>
-      )}
-      
-      <h2 className="mb-4 text-2xl font-bold">Recent Quotation Requests</h2>
-      
-      {requests.length === 0 ? (
-        <div className="p-8 text-center bg-white rounded-lg shadow">
-          <h3 className="mb-4 text-xl font-semibold">No quotation requests yet</h3>
-          <p className="mb-6 text-gray-600">
-            You haven't submitted any quotation requests yet. Get started by requesting a quotation from solar panel vendors.
-          </p>
-          <Link 
-            href="/customer/request-quotation" 
-            className="inline-block px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          >
-            Request a Quotation
-          </Link>
-        </div>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-2">
-          {requests.slice(0, 4).map((request) => (
-            <div key={request.id} className="p-6 bg-white rounded-lg shadow">
-              <div className="flex items-center justify-between mb-4">
-                <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                  request.status === 'open' 
-                    ? 'bg-green-100 text-green-800' 
-                    : request.status === 'in_progress' 
-                    ? 'bg-blue-100 text-blue-800' 
-                    : 'bg-gray-100 text-gray-800'
-                }`}>
-                  {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
-                </span>
-                <span className="text-sm text-gray-500">
-                  {new Date(request.created_at).toLocaleDateString()}
-                </span>
+    );
+  }
+
+  return (
+    <div className="container mx-auto py-10">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Customer Dashboard</h1>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>Request New Quotation</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Request for Quotation</DialogTitle>
+              <DialogDescription>
+                Fill in the details below to request quotations from solar panel vendors.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSubmitQuotationRequest}>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="address">Installation Address</Label>
+                  <Input
+                    id="address"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="Enter the address for installation"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="numDevices">Number of Electronic Devices</Label>
+                  <Input
+                    id="numDevices"
+                    type="number"
+                    value={numDevices}
+                    onChange={(e) => setNumDevices(e.target.value)}
+                    placeholder="Enter the number of electronic devices"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="monthlyBill">Monthly Electricity Bill ($)</Label>
+                  <Input
+                    id="monthlyBill"
+                    type="number"
+                    step="0.01"
+                    value={monthlyBill}
+                    onChange={(e) => setMonthlyBill(e.target.value)}
+                    placeholder="Enter your average monthly electricity bill"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="additionalRequirements">Additional Requirements</Label>
+                  <Textarea
+                    id="additionalRequirements"
+                    value={additionalRequirements}
+                    onChange={(e) => setAdditionalRequirements(e.target.value)}
+                    placeholder="Any specific requirements or questions"
+                    rows={4}
+                  />
+                </div>
               </div>
-              
-              <h3 className="mb-2 text-lg font-semibold">Request #{request.id.substring(0, 8)}</h3>
-              
-              <div className="mb-4 space-y-2">
-                <p className="text-sm text-gray-700">
-                  <span className="font-medium">Address:</span> {request.address}
-                </p>
-                <p className="text-sm text-gray-700">
-                  <span className="font-medium">Monthly Bill:</span> ${request.monthly_electricity_bill}
-                </p>
+              <DialogFooter>
+                <Button type="submit">Submit Request</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {error && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      <div className="grid gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Your Quotation Requests</CardTitle>
+            <CardDescription>
+              View and manage your solar panel installation quotation requests
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="text-center py-4">Loading your quotation requests...</div>
+            ) : quotationRequests.length === 0 ? (
+              <div className="text-center py-4">
+                <p className="text-gray-500">You haven't submitted any quotation requests yet.</p>
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
+                  onClick={() => setIsDialogOpen(true)}
+                >
+                  Request Your First Quotation
+                </Button>
               </div>
-              
-              <Link 
-                href={`/customer/quotations/${request.id}`} 
-                className="text-sm font-medium text-blue-600 hover:text-blue-500"
-              >
-                View Details →
-              </Link>
-            </div>
-          ))}
-        </div>
-      )}
-      
-      {requests.length > 4 && (
-        <div className="mt-4 text-center">
-          <Link 
-            href="/customer/quotations" 
-            className="text-blue-600 hover:text-blue-500"
-          >
-            View All Requests →
-          </Link>
-        </div>
-      )}
+            ) : (
+              <div className="space-y-6">
+                {quotationRequests.map((request) => (
+                  <Card key={request.id} className="overflow-hidden">
+                    <div className="bg-muted p-4">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <h3 className="font-medium">{request.address}</h3>
+                          <p className="text-sm text-gray-500">
+                            Submitted on {new Date(request.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="flex items-center">
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            request.status === 'open' 
+                              ? 'bg-blue-100 text-blue-800' 
+                              : request.status === 'in_progress' 
+                              ? 'bg-yellow-100 text-yellow-800' 
+                              : 'bg-green-100 text-green-800'
+                          }`}>
+                            {request.status.replace('_', ' ')}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-4">
+                      <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">Devices</p>
+                          <p>{request.num_electronic_devices}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">Monthly Bill</p>
+                          <p>${request.monthly_electricity_bill.toFixed(2)}</p>
+                        </div>
+                      </div>
+                      {request.additional_requirements && (
+                        <div className="mt-2">
+                          <p className="text-sm font-medium text-gray-500">Additional Requirements</p>
+                          <p className="text-sm">{request.additional_requirements}</p>
+                        </div>
+                      )}
+                      <div className="mt-4">
+                        <Button variant="outline" className="w-full">
+                          View Quotations ({request.quotations_count || 0})
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
