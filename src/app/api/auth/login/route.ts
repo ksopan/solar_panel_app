@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Set session cookie
-    const cookieStore = cookies();
+    const cookieStore = cookies(); // No need for 'await' here
     cookieStore.set({
       name: 'session_token',
       value: result.sessionToken,
@@ -35,6 +35,17 @@ export async function POST(request: NextRequest) {
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: '/',
     });
+    
+
+    // const cookieStore = await cookies();
+    // await cookieStore.set({
+    //   name: 'session_token',
+    //   value: result.sessionToken,
+    //   httpOnly: true,
+    //   secure: process.env.NODE_ENV === 'production',
+    //   maxAge: 60 * 60 * 24 * 7, // 7 days
+    //   path: '/',
+    // }) ;
     
     return NextResponse.json({
       message: 'Login successful',

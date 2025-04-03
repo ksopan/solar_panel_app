@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { Geist, Geist_Mono } from 'next/font/google'
+import { NextAuthProvider } from '@/components/auth-provider'; // Import NextAuthProvider
 import './globals.css'
 import './fix.css'
 
@@ -16,7 +17,6 @@ const geistMono = Geist_Mono({
   subsets: ['latin']
 })
 
-// src/app/layout.tsx
 export default function RootLayout({
   children
 }: Readonly<{
@@ -28,7 +28,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning
       >
-        {children}
+        {/* Wrap children with NextAuthProvider */}
+        <NextAuthProvider>
+          {children}
+        </NextAuthProvider>
       </body>
     </html>
   )
