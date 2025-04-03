@@ -130,6 +130,7 @@ export default function AuthForm({ type, userType }: AuthFormProps) {
       }
       
       // Redirect based on user type and action
+      // Inside handleSubmit function in AuthForm.tsx
       if (isLogin) {
         const data = await response.json();
         if (data.user.user_type === 'customer') {

@@ -1,10 +1,5 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
   "/api/auth/login/route": "app/api/auth/login/route.js",
-  "/api/quotations/request/route": "app/api/quotations/request/route.js",
-  "/customer/quotations/page": "app/customer/quotations/page.js",
-  "/customer/request-quotation/page": "app/customer/request-quotation/page.js",
   "/login/page": "app/login/page.js",
-  "/customer/dashboard/page": "app/customer/dashboard/page.js",
-  "/customer/quotations/[id]/page": "app/customer/quotations/[id]/page.js"
+  "/vendor/dashboard/page": "app/vendor/dashboard/page.js"
 }

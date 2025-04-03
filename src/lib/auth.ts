@@ -231,11 +231,31 @@ export async function login(
     if (process.env.NODE_ENV === 'development') {
       console.log('Development mode - simulating login');
       
-      // Allow any login during development with demo credentials
-      // Or, if you prefer, check for specific credentials
-      // if (email === 'test@example.com' && password === 'password') {
+      // Get user from the DB
+      const user = await db.prepare(
+        'SELECT * FROM users WHERE email = ?'
+      ).bind(email).first<{
+        id: string;
+        email: string;
+        user_type: UserType;
+        is_active: boolean;
+      }>();
       
-      // Create a mock user based on the email domain
+      // If user exists, return that user with its correct type
+      if (user) {
+        return {
+          success: true,
+          user: {
+            id: user.id,
+            email: user.email,
+            user_type: user.user_type,
+            is_active: user.is_active
+          },
+          sessionToken: `dev-session-${user.user_type}-${Date.now()}`
+        };
+      }
+      
+      // For demo accounts
       let userType: UserType = 'customer';
       if (email.includes('vendor')) {
         userType = 'vendor';
@@ -246,12 +266,12 @@ export async function login(
       return {
         success: true,
         user: {
-          id: 'dev-user-' + Date.now(),
+          id: `dev-user-${userType}-${Date.now()}`,
           email: email,
           user_type: userType,
           is_active: true
         },
-        sessionToken: 'dev-session-' + Date.now()
+        sessionToken: `dev-session-${userType}-${Date.now()}`
       };
     }
     
@@ -380,8 +400,11 @@ export async function getCurrentUser(db: DrizzleD1Database, sessionToken: string
 
 // Helper functions for server components
 export async function getSessionToken(): Promise<string | undefined> {
+  // Using the synchronous version of cookies() is deprecated in Next.js
   const cookieStore = cookies();
-  return cookieStore.get('session_token')?.value;
+  // Fix: Just don't try to await the get() method, it's not async
+  const cookie = cookieStore.get('session_token');
+  return cookie?.value;
 }
 
 export async function requireAuth(db: DrizzleD1Database, allowedTypes?: UserType[]): Promise<User> {
@@ -398,6 +421,7 @@ export async function requireAuth(db: DrizzleD1Database, allowedTypes?: UserType
   }
   
   if (allowedTypes && !allowedTypes.includes(user.user_type)) {
+    // User type doesn't match the allowed types for this page
     redirect('/unauthorized');
   }
   
