@@ -1,5 +1,28 @@
 {
-  "node": {},
+  "node": {
+    "0018ca92ca5538b327769c65ad3b19e7d33ac6a465": {
+      "workers": {
+        "app/page": {
+          "moduleId": "(action-browser)/./node_modules/.pnpm/next@15.1.4_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22%2FUsers%2Fsopan%2FDownloads%2Fsolar_panel_app_new%2Fsolar_panel_app%2Fsrc%2Fapp%2Fcounter.ts%22%2C%5B%5B%220018ca92ca5538b327769c65ad3b19e7d33ac6a465%22%2C%22incrementAndLog%22%5D%2C%5B%2200a2a2bdd2c8735cc3508c5dd9605592e22966d39f%22%2C%22getStats%22%5D%5D%5D%5D&__client_imported__=true!",
+          "async": false
+        }
+      },
+      "layer": {
+        "app/page": "action-browser"
+      }
+    },
+    "00a2a2bdd2c8735cc3508c5dd9605592e22966d39f": {
+      "workers": {
+        "app/page": {
+          "moduleId": "(action-browser)/./node_modules/.pnpm/next@15.1.4_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22%2FUsers%2Fsopan%2FDownloads%2Fsolar_panel_app_new%2Fsolar_panel_app%2Fsrc%2Fapp%2Fcounter.ts%22%2C%5B%5B%220018ca92ca5538b327769c65ad3b19e7d33ac6a465%22%2C%22incrementAndLog%22%5D%2C%5B%2200a2a2bdd2c8735cc3508c5dd9605592e22966d39f%22%2C%22getStats%22%5D%5D%5D%5D&__client_imported__=true!",
+          "async": false
+        }
+      },
+      "layer": {
+        "app/page": "action-browser"
+      }
+    }
+  },
   "edge": {},
   "encryptionKey": "ioszrN36gxlPiAkb6FU2XibzfOANQHTo/x9W3bT1Wbo="
 }
