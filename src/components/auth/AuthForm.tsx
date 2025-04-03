@@ -94,30 +94,27 @@ export default function AuthForm({ type, userType }: AuthFormProps) {
       }
       
       // Prepare form data
-      const formData: Record<string, any> = {
+      let formData: Record<string, any> = {
         email,
         password,
       };
       
       if (!isLogin) {
-        formData.userType = userType;
+        // Make sure to include user_type directly in the request body
+        formData.user_type = userType;
         
         if (userType === 'customer') {
-          formData.profile = {
-            firstName,
-            lastName,
-            address,
-            phoneNumber,
-          };
+          formData.firstName = firstName;
+          formData.lastName = lastName;
+          formData.address = address;
+          formData.phoneNumber = phoneNumber;
         } else if (userType === 'vendor') {
-          formData.profile = {
-            companyName,
-            ownerName,
-            companyAddress,
-            contactPhone,
-            description,
-            servicesOffered,
-          };
+          formData.companyName = companyName;
+          formData.ownerName = ownerName;
+          formData.companyAddress = companyAddress;
+          formData.contactPhone = contactPhone;
+          formData.description = description;
+          formData.servicesOffered = servicesOffered;
         }
       }
       

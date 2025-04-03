@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from 'next/server';
+import { getDatabase } from '@/lib/db';
 import bcrypt from "bcryptjs";
 import { nanoid } from "nanoid";
-import { getDatabase } from "@/lib/db";
 
 export async function POST(request: NextRequest) {
   try {
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const db = getDatabase();
+    const db = getDatabase(request.env);
 
     // Check if user already exists
     const existingUser = await db.prepare("SELECT * FROM users WHERE email = ?")
