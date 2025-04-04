@@ -1,34 +1,30 @@
-// For src/app/customer/dashboard/page.tsx
-// This should be a server component that uses requireAuth
-
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { getDatabase } from '@/lib/db';
 import { requireAuth } from '@/lib/auth';
 import { getQuotationRequestsByCustomer } from '@/lib/quotation';
-import QuotationRequestList from '@/components/quotation/QuotationRequestList'; // You may need to create this component
 
 export const metadata: Metadata = {
   title: 'Customer Dashboard - Solar Panel Vendor Selection',
   description: 'Manage your solar panel quotation requests',
 };
 
-// Mark this component as a Server Component
 export default async function CustomerDashboardPage() {
   console.log("Starting CustomerDashboardPage");
-  
-  // Server-side authentication check
+
   const db = getDatabase();
-  
+
   try {
     console.log("Requiring auth for customer");
     const user = await requireAuth(db, ['customer']);
     console.log("Auth successful for user:", user.email);
-    
-    // Get customer's quotation requests
+
+    let requests: any[] = [];
     const result = await getQuotationRequestsByCustomer(db, user.id);
-    const requests = result.success ? result.requests : [];
-    
+    if (result?.success && Array.isArray(result.requests)) {
+      requests = result.requests;
+    }
+
     return (
       <div className="container p-6 mx-auto">
         <div className="flex items-center justify-between mb-8">
@@ -40,13 +36,13 @@ export default async function CustomerDashboardPage() {
             Request New Quotation
           </Link>
         </div>
-        
+
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <div className="p-6 bg-white rounded-lg shadow">
               <h2 className="mb-4 text-xl font-semibold">Your Quotation Requests</h2>
-              
-              {requests.length === 0 ? (
+
+              {!Array.isArray(requests) || requests.length === 0 ? (
                 <div className="p-8 text-center">
                   <p className="mb-4 text-gray-600">You haven't submitted any quotation requests yet.</p>
                   <Link 
@@ -97,7 +93,7 @@ export default async function CustomerDashboardPage() {
               )}
             </div>
           </div>
-          
+
           <div>
             <div className="p-6 bg-white rounded-lg shadow">
               <h2 className="mb-4 text-xl font-semibold">Account Summary</h2>

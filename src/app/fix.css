@@ -1,5 +1,37 @@
-input[type="password"] {
-  -webkit-text-fill-color: #000000 !important;
+/* Target all input types */
+input, 
+input[type="text"], 
+input[type="password"],
+input[type="email"],
+input[type="number"],
+input[type="search"],
+input[type="tel"],
+input[type="url"],
+textarea,
+select {
   color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  caret-color: #000000 !important;
+}
+
+/* Ensure higher specificity for input elements */
+.dark input,
+.dark textarea,
+.dark select,
+body.dark input,
+body.dark textarea,
+body.dark select {
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  caret-color: #000000 !important;
+}
+
+/* Target any potentially styled wrappers or containers */
+.input-container input,
+.form-control,
+[class*="input"],
+[class*="textfield"] {
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
   caret-color: #000000 !important;
 }

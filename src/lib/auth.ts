@@ -227,100 +227,55 @@ export async function login(
   password: string
 ) {
   try {
-    // Special handling for development mode
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Development mode - simulating login');
-      
-      // Get user from the DB
-      const user = await db.prepare(
-        'SELECT * FROM users WHERE email = ?'
-      ).bind(email).first<{
-        id: string;
-        email: string;
-        user_type: UserType;
-        is_active: boolean;
-      }>();
-      
-      // If user exists, return that user with its correct type
-      if (user) {
-        return {
-          success: true,
-          user: {
-            id: user.id,
-            email: user.email,
-            user_type: user.user_type,
-            is_active: user.is_active
-          },
-          sessionToken: `dev-session-${user.user_type}-${Date.now()}`
-        };
-      }
-      
-      // For demo accounts
-      let userType: UserType = 'customer';
-      if (email.includes('vendor')) {
-        userType = 'vendor';
-      } else if (email.includes('admin')) {
-        userType = 'admin';
-      }
-      
-      return {
-        success: true,
-        user: {
-          id: `dev-user-${userType}-${Date.now()}`,
-          email: email,
-          user_type: userType,
-          is_active: true
-        },
-        sessionToken: `dev-session-${userType}-${Date.now()}`
-      };
-    }
-    
-    // Original login code for production...
-    // Get user from database
-    const user = await db.prepare(
-      'SELECT * FROM users WHERE email = ?'
-    ).bind(email).first<{
-      id: string;
-      email: string;
-      password_hash: string;
-      user_type: UserType;
-      is_active: boolean;
-    }>();
-    
+    console.log(`[LOGIN] Attempt from: ${email} in ${process.env.NODE_ENV}`);
+
+    // Always check the DB — even in development mode
+    const stmt = db.prepare('SELECT * FROM users WHERE email = ?');
+    const user = stmt.get(email);
+
     if (!user) {
+      console.warn(`[LOGIN] User not found: ${email}`);
       return { success: false, message: 'Invalid email or password' };
     }
-    
-    // Check if user is active
+
     if (!user.is_active) {
+      console.warn(`[LOGIN] User is inactive: ${email}`);
       return { success: false, message: 'Account is inactive' };
     }
-    
-    // Verify password
+
     const isPasswordValid = await compare(password, user.password_hash);
     if (!isPasswordValid) {
+      console.warn(`[LOGIN] Incorrect password for: ${email}`);
       return { success: false, message: 'Invalid email or password' };
     }
-    
-    // Create session
-    const sessionId = nanoid();
-    const sessionToken = nanoid(64);
-    
-    // Set expiration to 7 days from now
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7);
-    
-    // Store session in database
-    await db.prepare(
-      'INSERT INTO sessions (id, user_id, token, expires_at, created_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)'
-    ).bind(sessionId, user.id, sessionToken, expiresAt.toISOString()).run();
-    
+
+    // Simulate session token in dev mode
+    const sessionToken =
+      process.env.NODE_ENV === 'development'
+        ? `dev-session-${user.user_type}-${Date.now()}`
+        : nanoid(64);
+
+    // Only insert session into DB in production
+    if (process.env.NODE_ENV !== 'development') {
+      const sessionId = nanoid();
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+
+      await db
+        .prepare(
+          'INSERT INTO sessions (id, user_id, token, expires_at, created_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)'
+        )
+        .bind(sessionId, user.id, sessionToken, expiresAt.toISOString())
+        .run();
+    }
+
     return {
       success: true,
       user: {
         id: user.id,
         email: user.email,
-        user_type: user.user_type
+        user_type: user.user_type,
+        is_active: user.is_active
       },
       sessionToken
     };
@@ -329,6 +284,7 @@ export async function login(
     return { success: false, message: 'Login failed' };
   }
 }
+
 
 export async function logout(db: DrizzleD1Database, sessionToken: string) {
   try {
@@ -404,12 +360,11 @@ export async function getCurrentUser(db: DrizzleD1Database, sessionToken: string
 // Updated implementation:
 export function getSessionToken(): string | undefined {
   try {
-    const cookieStore = cookies();
+    const cookieStore = cookies(); // ✅ `cookies()` is synchronous
     const cookie = cookieStore.get('session_token');
-    
-    // For debugging - you can remove these console logs later
+
     console.log("Cookie found:", cookie?.value ? "Yes" : "No");
-    
+
     return cookie?.value;
   } catch (error) {
     console.error("Error getting session token:", error);
@@ -417,65 +372,64 @@ export function getSessionToken(): string | undefined {
   }
 }
 
+
 export async function requireAuth(db: DrizzleD1Database, allowedTypes?: UserType[]): Promise<User> {
   try {
-    const sessionToken = getSessionToken();
-    
+    const sessionToken = getSessionToken(); // ✅ no need to await now
+
     console.log("Session token in requireAuth:", sessionToken ? "Present" : "Missing");
-    
-    if (!sessionToken) {
+
+    if (!sessionToken || typeof sessionToken !== 'string') {
       console.log("No session token, redirecting to login");
       redirect('/login');
     }
-    
-    // Special handling for development mode - simpler version
-    if (process.env.NODE_ENV === 'development' && sessionToken?.startsWith('dev-session-')) {
+
+    // Handle development mode token
+    if (process.env.NODE_ENV === 'development' && sessionToken.startsWith('dev-session-')) {
       console.log("Using development session token");
-      
-      // Extract user type from session token
+
       let userType: UserType = 'customer';
       if (sessionToken.includes('vendor')) {
         userType = 'vendor';
       } else if (sessionToken.includes('admin')) {
         userType = 'admin';
       }
-      
+
       const devUser: User = {
         id: 'dev-user-id',
         email: 'dev@example.com',
         user_type: userType,
-        is_active: true
+        is_active: true,
       };
-      
+
       if (allowedTypes && !allowedTypes.includes(devUser.user_type)) {
         console.log("User type not allowed:", devUser.user_type, "Allowed types:", allowedTypes);
         redirect('/unauthorized');
       }
-      
+
       return devUser;
     }
-    
-    console.log("Getting current user from database");
+
+    // Get user from DB in production
     const user = await getCurrentUser(db, sessionToken);
-    
+
     if (!user) {
       console.log("No user found for session token");
       redirect('/login');
     }
-    
-    console.log("User found:", user.email, user.user_type);
-    
+
     if (allowedTypes && !allowedTypes.includes(user.user_type)) {
       console.log("User type not allowed:", user.user_type, "Allowed types:", allowedTypes);
       redirect('/unauthorized');
     }
-    
+
     return user;
   } catch (error) {
     console.error("Error in requireAuth:", error);
     redirect('/login');
   }
 }
+
 
 
 export async function getCustomerProfile(db: DrizzleD1Database, userId: string): Promise<CustomerProfile | null> {
