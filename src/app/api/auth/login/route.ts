@@ -25,9 +25,15 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Set session cookie
-    const cookieStore = cookies(); // No need for 'await' here
-    cookieStore.set({
+    // Set session cookie - fixing the async cookies issue
+    // You can use this approach with the synchronous cookies() API
+    const response = NextResponse.json({
+      message: 'Login successful',
+      user: result.user,
+    });
+    
+    // Set cookie on the response object instead
+    response.cookies.set({
       name: 'session_token',
       value: result.sessionToken,
       httpOnly: true,
@@ -36,21 +42,8 @@ export async function POST(request: NextRequest) {
       path: '/',
     });
     
-
-    // const cookieStore = await cookies();
-    // await cookieStore.set({
-    //   name: 'session_token',
-    //   value: result.sessionToken,
-    //   httpOnly: true,
-    //   secure: process.env.NODE_ENV === 'production',
-    //   maxAge: 60 * 60 * 24 * 7, // 7 days
-    //   path: '/',
-    // }) ;
-    
-    return NextResponse.json({
-      message: 'Login successful',
-      user: result.user,
-    });
+    return response;
+  
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(
