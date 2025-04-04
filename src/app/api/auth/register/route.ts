@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
       servicesOffered
     } = body;
 
-    // Validate required fields
+// Validate required fields
     if (!email || !password || !user_type) {
       return NextResponse.json(
         { message: "Email, password, and user type are required" },
@@ -72,6 +72,13 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // ✅ Add this debug log here
+    const displayName = user_type === "customer"
+      ? `${firstName} ${lastName}`
+      : companyName;
+    
+    console.log("📦 Registering new user:", displayName, email);
+  
     // Generate unique ID
     const userId = nanoid();
 
