@@ -355,17 +355,29 @@ export async function getCurrentUser(db: DrizzleD1Database, sessionToken: string
 }
 
 // Helper functions for server components
-// Replace the getSessionToken function in src/lib/auth.ts with this
 
-// Updated implementation:
 export function getSessionToken(): string | undefined {
   try {
-    // For Next.js 13+, cookies() is synchronous despite the warning
+    // Force synchronous behavior for cookies() to avoid the warning
+    // This is a workaround for the Next.js warning
+    let token: string | undefined;
+    
+    // In development mode, check if there's a cookie in document.cookie
+    if (typeof document !== 'undefined') {
+      const cookieStr = document.cookie;
+      const match = cookieStr.match(/session_token=([^;]+)/);
+      if (match) {
+        token = match[1];
+        console.log("Found token in document.cookie:", token ? "Present" : "Missing");
+        return token;
+      }
+    }
+    
+    // For server components in Next.js
     const cookieStore = cookies();
     const cookie = cookieStore.get('session_token');
-
+    
     console.log("Cookie found:", cookie?.value ? "Yes" : "No");
-
     return cookie?.value;
   } catch (error) {
     console.error("Error getting session token:", error);

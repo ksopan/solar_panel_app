@@ -86,19 +86,54 @@ export async function createQuotationRequest(
   }
 }
 
+// src/lib/quotation.ts - Updated getQuotationRequestsByCustomer function
+
 export async function getQuotationRequestsByCustomer(
   db: DrizzleD1Database,
   customerId: string
 ) {
   try {
+    // For development environment, create some mock data
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Using mock customer quotation requests for development');
+      return { 
+        success: true, 
+        requests: [
+          {
+            id: 'mock-cust-req-1',
+            customer_id: customerId,
+            address: '123 Main St, Anytown, USA',
+            num_electronic_devices: 15,
+            monthly_electricity_bill: 250.75,
+            additional_requirements: 'Looking for high-efficiency panels',
+            status: 'open',
+            created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+            updated_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+          },
+          {
+            id: 'mock-cust-req-2',
+            customer_id: customerId,
+            address: '456 Oak Ave, Somewhere, USA',
+            num_electronic_devices: 10,
+            monthly_electricity_bill: 185.50,
+            additional_requirements: 'Need installation within 3 weeks',
+            status: 'in_progress',
+            created_at: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+            updated_at: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString()
+          }
+        ]
+      };
+    }
+
+    // Get requests from database
     const requests = await db.prepare(
       'SELECT * FROM quotation_requests WHERE customer_id = ? ORDER BY created_at DESC'
     ).bind(customerId).all<QuotationRequest>();
     
-    return { success: true, requests: requests.results };
+    return { success: true, requests: requests.results || [] };
   } catch (error) {
     console.error('Error getting quotation requests:', error);
-    return { success: false, message: 'Failed to get quotation requests' };
+    return { success: false, message: 'Failed to get quotation requests', requests: [] };
   }
 }
 
@@ -122,16 +157,51 @@ export async function getQuotationRequestById(
   }
 }
 
+// src/lib/quotation.ts - Updated getOpenQuotationRequests function
+
 export async function getOpenQuotationRequests(db: DrizzleD1Database) {
   try {
+    // For development environment, create some mock data
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Using mock open quotation requests for development');
+      return { 
+        success: true, 
+        requests: [
+          {
+            id: 'mock-request-1',
+            customer_id: 'mock-customer-1',
+            address: '123 Main St, Anytown, USA',
+            num_electronic_devices: 15,
+            monthly_electricity_bill: 250.75,
+            additional_requirements: 'Looking for high-efficiency panels',
+            status: 'open',
+            created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+            updated_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+          },
+          {
+            id: 'mock-request-2',
+            customer_id: 'mock-customer-2',
+            address: '456 Oak Ave, Somewhere, USA',
+            num_electronic_devices: 10,
+            monthly_electricity_bill: 185.50,
+            additional_requirements: 'Need installation within 3 weeks',
+            status: 'open',
+            created_at: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+            updated_at: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString()
+          }
+        ]
+      };
+    }
+
+    // For production, get actual data from database
     const requests = await db.prepare(
       'SELECT * FROM quotation_requests WHERE status = ? ORDER BY created_at DESC'
     ).bind('open').all<QuotationRequest>();
     
-    return { success: true, requests: requests.results };
+    return { success: true, requests: requests.results || [] };
   } catch (error) {
     console.error('Error getting open quotation requests:', error);
-    return { success: false, message: 'Failed to get open quotation requests' };
+    return { success: false, message: 'Failed to get open quotation requests', requests: [] };
   }
 }
 

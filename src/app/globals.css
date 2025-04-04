@@ -92,3 +92,53 @@ input, textarea, select {
   -webkit-text-fill-color: #000000 !important;
   caret-color: #000000 !important;
 }
+
+
+/* Improve text visibility in dark mode */
+.dark {
+  --text-primary: #ffffff;
+  --text-secondary: #e0e0e0;
+  --background-card: #1e1e1e;
+  --border-color: #333333;
+}
+
+/* Make sure text is visible in cards */
+.bg-white, .rounded-lg, .shadow {
+  color: var(--foreground);
+}
+
+/* Make sure text is visible even in dark mode */
+p, h1, h2, h3, h4, h5, h6, span, div {
+  color: inherit;
+}
+
+/* Fix specific issues with dashboard cards */
+.dark .bg-white {
+  background-color: var(--background-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+/* Fix status badges to be more visible */
+.dark .open, 
+.dark .in_progress {
+  color: #ffffff;
+  font-weight: bold;
+}
+
+.dark .open {
+  background-color: #22c55e; /* green */
+}
+
+.dark .in_progress {
+  background-color: #3b82f6; /* blue */
+}
+
+/* Fix text colors in the account summary section */
+.dark .text-gray-500 {
+  color: #a0aec0;
+}
+
+.dark .text-black {
+  color: #ffffff;
+}

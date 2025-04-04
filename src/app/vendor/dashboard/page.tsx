@@ -1,6 +1,4 @@
-// For src/app/vendor/dashboard/page.tsx
-// Server component that uses requireAuth for vendor access
-
+// src/app/vendor/dashboard/page.tsx
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { getDatabase } from '@/lib/db';
@@ -23,21 +21,34 @@ export default async function VendorDashboardPage() {
     const user = await requireAuth(db, ['vendor']);
     console.log("Auth successful for vendor:", user.email);
     
-    // Get open quotation requests from customers
-    const openRequestsResult = await getOpenQuotationRequests(db);
-    const openRequests = openRequestsResult.success ? openRequestsResult.requests : [];
+    // Initialize open requests as an empty array to avoid undefined errors
+    let openRequests: any[] = [];
+    let vendorQuotations: any[] = [];
     
-    // Get vendor's submitted quotations
-    const vendorQuotationsResult = await db.prepare(`
-      SELECT vq.*, qr.address, qr.monthly_electricity_bill, qr.num_electronic_devices 
-      FROM vendor_quotations vq
-      JOIN quotation_requests qr ON vq.quotation_request_id = qr.id
-      WHERE vq.vendor_id = ?
-      ORDER BY vq.created_at DESC
-      LIMIT 5
-    `).bind(user.id).all<any>();
-    
-    const vendorQuotations = vendorQuotationsResult.results || [];
+    try {
+      // Get open quotation requests from customers
+      const openRequestsResult = await getOpenQuotationRequests(db);
+      if (openRequestsResult.success && Array.isArray(openRequestsResult.requests)) {
+        openRequests = openRequestsResult.requests;
+      }
+      
+      // Get vendor's submitted quotations
+      const vendorQuotationsResult = await db.prepare(`
+        SELECT vq.*, qr.address, qr.monthly_electricity_bill, qr.num_electronic_devices 
+        FROM vendor_quotations vq
+        JOIN quotation_requests qr ON vq.quotation_request_id = qr.id
+        WHERE vq.vendor_id = ?
+        ORDER BY vq.created_at DESC
+        LIMIT 5
+      `).bind(user.id).all<any>();
+      
+      vendorQuotations = vendorQuotationsResult.results || [];
+    } catch (fetchError) {
+      console.error("Error fetching data:", fetchError);
+      // Set to empty arrays if there's an error
+      openRequests = [];
+      vendorQuotations = [];
+    }
     
     return (
       <div className="container p-6 mx-auto">
@@ -55,7 +66,7 @@ export default async function VendorDashboardPage() {
           <div className="p-6 bg-white rounded-lg shadow">
             <h2 className="mb-4 text-xl font-semibold">Open Quotation Requests</h2>
             <p className="mb-2 text-gray-600">
-              {openRequests.length} open request{openRequests.length !== 1 ? 's' : ''} waiting for your quotation
+              {Array.isArray(openRequests) ? openRequests.length : 0} open request{Array.isArray(openRequests) && openRequests.length !== 1 ? 's' : ''} waiting for your quotation
             </p>
             <Link 
               href="/vendor/requests" 
@@ -68,7 +79,7 @@ export default async function VendorDashboardPage() {
           <div className="p-6 bg-white rounded-lg shadow">
             <h2 className="mb-4 text-xl font-semibold">My Quotations</h2>
             <p className="mb-2 text-gray-600">
-              {vendorQuotations.length} quotation{vendorQuotations.length !== 1 ? 's' : ''} submitted
+              {Array.isArray(vendorQuotations) ? vendorQuotations.length : 0} quotation{Array.isArray(vendorQuotations) && vendorQuotations.length !== 1 ? 's' : ''} submitted
             </p>
             <Link 
               href="/vendor/quotations" 
@@ -93,9 +104,9 @@ export default async function VendorDashboardPage() {
         
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="p-6 bg-white rounded-lg shadow">
-            <h2 className="mb-4 text-xl font-semibold">Latest Quotation Requests</h2>
+            <h2 className="text-sm font-medium text-gray-500">Latest Quotation Requests</h2>
             
-            {openRequests.length === 0 ? (
+            {!Array.isArray(openRequests) || openRequests.length === 0 ? (
               <p className="text-center py-4 text-gray-500">
                 No open quotation requests at the moment.
               </p>
@@ -142,7 +153,7 @@ export default async function VendorDashboardPage() {
           <div className="p-6 bg-white rounded-lg shadow">
             <h2 className="mb-4 text-xl font-semibold">My Recent Quotations</h2>
             
-            {vendorQuotations.length === 0 ? (
+            {!Array.isArray(vendorQuotations) || vendorQuotations.length === 0 ? (
               <p className="text-center py-4 text-gray-500">
                 You haven't submitted any quotations yet.
               </p>

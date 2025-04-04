@@ -1,21 +1,15 @@
+// src/app/api/quotations/submit/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/db';
 import { getCurrentUser, getSessionToken } from '@/lib/auth';
 import { notifyCustomerAboutNewQuotation } from '@/lib/quotation';
+import { uploadQuotationPDF } from '@/lib/quotation-utils';
 import { nanoid } from 'nanoid';
-
-// Mock function for file upload since we don't have actual storage in this demo
-async function uploadPdfToStorage(file: File): Promise<string> {
-  // In a real implementation, this would upload to AWS S3 or similar
-  // For demo purposes, we'll just return a mock URL
-  const fileId = nanoid(8);
-  return `https://storage.example.com/quotations/${fileId}/${file.name}`;
-}
 
 export async function POST(request: NextRequest) {
   try {
     // Check authentication
-    const sessionToken = await getSessionToken();
+    const sessionToken = getSessionToken();
     if (!sessionToken) {
       return NextResponse.json(
         { message: 'Authentication required' },
@@ -85,7 +79,16 @@ export async function POST(request: NextRequest) {
     // Handle PDF upload if provided
     let quotationPdfUrl = null;
     if (quotationPdf) {
-      quotationPdfUrl = await uploadPdfToStorage(quotationPdf);
+      const uploadResult = await uploadQuotationPDF(quotationPdf);
+      
+      if (!uploadResult.success) {
+        return NextResponse.json(
+          { message: uploadResult.message || 'Failed to upload quotation PDF' },
+          { status: 400 }
+        );
+      }
+      
+      quotationPdfUrl = uploadResult.url;
     }
     
     // Create quotation
@@ -123,7 +126,8 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json({
       message: 'Quotation submitted successfully',
-      quotationId
+      quotationId,
+      quotationUrl: quotationPdfUrl
     }, { status: 201 });
   } catch (error) {
     console.error('Error submitting quotation:', error);

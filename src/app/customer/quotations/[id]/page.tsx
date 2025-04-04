@@ -1,3 +1,4 @@
+// src/app/customer/quotations/[id]/page.tsx
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { getDatabase } from '@/lib/db';
@@ -32,13 +33,13 @@ export default async function QuotationDetailPage({ params }: { params: { id: st
   }
   
   // Get vendor quotations for this request
-  const quotationsResult = await db.prepare(
-    `SELECT vq.*, v.company_name 
-     FROM vendor_quotations vq
-     JOIN vendors v ON vq.vendor_id = v.id
-     WHERE vq.quotation_request_id = ?
-     ORDER BY vq.created_at DESC`
-  ).bind(requestId).all<any>();
+  const quotationsResult = await db.prepare(`
+    SELECT vq.*, v.company_name, v.contact_phone, v.services_offered
+    FROM vendor_quotations vq
+    JOIN vendors v ON vq.vendor_id = v.id
+    WHERE vq.quotation_request_id = ?
+    ORDER BY vq.created_at DESC
+  `).bind(requestId).all<any>();
   
   const quotations = quotationsResult.results || [];
   
@@ -50,9 +51,12 @@ export default async function QuotationDetailPage({ params }: { params: { id: st
       <div className="mb-6">
         <Link 
           href="/customer/quotations" 
-          className="text-sm font-medium text-blue-600 hover:text-blue-500"
+          className="text-sm font-medium text-blue-600 hover:text-blue-500 flex items-center"
         >
-          ← Back to Quotation Requests
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Back to Quotation Requests
         </Link>
       </div>
       
@@ -113,7 +117,7 @@ export default async function QuotationDetailPage({ params }: { params: { id: st
         )}
       </div>
       
-      <h2 className="mb-4 text-2xl font-bold">Received Quotations</h2>
+      <h2 className="mb-4 text-2xl font-bold">Received Quotations ({quotations.length})</h2>
       
       {quotations.length === 0 ? (
         <div className="p-8 text-center bg-white rounded-lg shadow">
@@ -161,7 +165,18 @@ export default async function QuotationDetailPage({ params }: { params: { id: st
                 </div>
               )}
               
-              <div className="flex space-x-4">
+              <div className="grid grid-cols-2 gap-6 mb-6">
+                <div>
+                  <h4 className="mb-1 text-sm font-medium text-gray-500">Contact Phone</h4>
+                  <p className="text-gray-900">{quotation.contact_phone || "Not provided"}</p>
+                </div>
+                <div>
+                  <h4 className="mb-1 text-sm font-medium text-gray-500">Services Offered</h4>
+                  <p className="text-gray-900">{quotation.services_offered || "Not specified"}</p>
+                </div>
+              </div>
+              
+              <div className="flex flex-wrap gap-4">
                 {quotation.quotation_pdf_url && (
                   <a 
                     href={quotation.quotation_pdf_url} 
