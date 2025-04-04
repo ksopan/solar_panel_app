@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function QuotationRequestForm() {
   const router = useRouter();
@@ -65,10 +66,10 @@ export default function QuotationRequestForm() {
       setMonthlyBill('');
       setAdditionalRequirements('');
       
-      // Redirect to quotation requests list after a short delay
+      // Redirect to dashboard after a short delay
       setTimeout(() => {
-        router.push('/customer/quotations');
-      }, 2000);
+        router.push('/customer/dashboard');
+      }, 1500);
     } catch (error) {
       console.error('Quotation request error:', error);
       setError(error instanceof Error ? error.message : 'Failed to submit quotation request');
@@ -89,7 +90,7 @@ export default function QuotationRequestForm() {
       
       {success && (
         <div className="p-3 mb-4 text-sm text-green-800 bg-green-100 rounded-md">
-          Your quotation request has been submitted successfully! Vendors will be notified and you'll receive quotations soon.
+          Your quotation request has been submitted successfully! Redirecting to dashboard...
         </div>
       )}
       
@@ -106,7 +107,7 @@ export default function QuotationRequestForm() {
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled={isLoading}
+            disabled={isLoading || success}
             placeholder="Enter the complete address where solar panels will be installed"
           />
         </div>
@@ -125,7 +126,7 @@ export default function QuotationRequestForm() {
               value={numDevices}
               onChange={(e) => setNumDevices(e.target.value ? parseInt(e.target.value) : '')}
               className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={isLoading}
+              disabled={isLoading || success}
               placeholder="e.g., 15"
             />
             <p className="mt-1 text-xs text-gray-500">
@@ -147,7 +148,7 @@ export default function QuotationRequestForm() {
               value={monthlyBill}
               onChange={(e) => setMonthlyBill(e.target.value ? parseFloat(e.target.value) : '')}
               className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={isLoading}
+              disabled={isLoading || success}
               placeholder="e.g., 150.00"
             />
             <p className="mt-1 text-xs text-gray-500">
@@ -167,18 +168,25 @@ export default function QuotationRequestForm() {
             value={additionalRequirements}
             onChange={(e) => setAdditionalRequirements(e.target.value)}
             className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled={isLoading}
+            disabled={isLoading || success}
             placeholder="Any specific requirements or questions for vendors (optional)"
           />
         </div>
         
-        <div className="pt-4">
+        <div className="pt-4 flex justify-between">
+          <Link 
+            href="/customer/dashboard"
+            className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+          >
+            Cancel
+          </Link>
+          
           <button
             type="submit"
-            className="w-full px-4 py-3 text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
-            disabled={isLoading}
+            className="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+            disabled={isLoading || success}
           >
-            {isLoading ? 'Submitting...' : 'Submit Quotation Request'}
+            {isLoading ? 'Submitting...' : success ? 'Submitted!' : 'Submit Quotation Request'}
           </button>
         </div>
       </form>

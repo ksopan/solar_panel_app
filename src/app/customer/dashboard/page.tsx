@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getDatabase } from '@/lib/db';
 import { requireAuth } from '@/lib/auth';
 import { getQuotationRequestsByCustomer } from '@/lib/quotation';
+import LogoutButton from '@/components/LogoutButton'; // Import the LogoutButton component
 
 export const metadata: Metadata = {
   title: 'Customer Dashboard - Solar Panel Vendor Selection',
@@ -29,12 +30,15 @@ export default async function CustomerDashboardPage() {
       <div className="container p-6 mx-auto">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold">Customer Dashboard</h1>
-          <Link 
-            href="/customer/request-quotation" 
-            className="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700"
-          >
-            Request New Quotation
-          </Link>
+          <div className="flex items-center gap-4">
+            <LogoutButton />
+            <Link 
+              href="/customer/request-quotation" 
+              className="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700"
+            >
+              Request New Quotation
+            </Link>
+          </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
@@ -100,11 +104,11 @@ export default async function CustomerDashboardPage() {
               <div className="space-y-4">
                 <div>
                   <h3 className="text-sm font-medium text-gray-500">Email</h3>
-                  <p>{user.email}</p>
+                  <p className="text-black dark:text-black">{user.email}</p>
                 </div>
                 <div>
                   <h3 className="text-sm font-medium text-gray-500">Account Type</h3>
-                  <p className="capitalize">{user.user_type}</p>
+                  <p className="capitalize text-black dark:text-black">{user.user_type}</p>
                 </div>
                 <div>
                   <h3 className="text-sm font-medium text-gray-500">Quick Links</h3>

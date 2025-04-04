@@ -43,11 +43,23 @@ export async function createQuotationRequest(
     const id = nanoid();
     const now = new Date().toISOString();
     
+    // Special handling for development mode
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Creating quotation request in development mode:', {
+        id,
+        customerId,
+        address: data.address,
+        devices: data.num_electronic_devices,
+        bill: data.monthly_electricity_bill
+      });
+    }
+    
+    // Insert the quotation request
     await db.prepare(
       `INSERT INTO quotation_requests 
        (id, customer_id, address, num_electronic_devices, monthly_electricity_bill, additional_requirements, status, created_at, updated_at) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    ).bind(
+    ).run(
       id,
       customerId,
       data.address,
@@ -57,10 +69,15 @@ export async function createQuotationRequest(
       'open',
       now,
       now
-    ).run();
+    );
     
-    // Notify all vendors about the new quotation request
-    await notifyVendorsAboutNewRequest(db, id);
+    // Skip notifications in development mode
+    if (process.env.NODE_ENV !== 'development') {
+      // Notify all vendors about the new quotation request
+      await notifyVendorsAboutNewRequest(db, id);
+    } else {
+      console.log('Skipping vendor notifications in development mode');
+    }
     
     return { success: true, requestId: id };
   } catch (error) {

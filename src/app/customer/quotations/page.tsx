@@ -16,7 +16,7 @@ export default async function CustomerQuotationsPage() {
   
   // Get customer's quotation requests
   const result = await getQuotationRequestsByCustomer(db, user.id);
-  const requests = result.success ? result.requests : [];
+  const requests = result.success && result.requests ? result.requests : [];
   
   return (
     <div className="container p-6 mx-auto">
@@ -30,7 +30,7 @@ export default async function CustomerQuotationsPage() {
         </Link>
       </div>
       
-      {requests.length === 0 ? (
+      {!Array.isArray(requests) || requests.length === 0 ? (
         <div className="p-8 text-center bg-white rounded-lg shadow">
           <h2 className="mb-4 text-xl font-semibold">No quotation requests yet</h2>
           <p className="mb-6 text-gray-600">

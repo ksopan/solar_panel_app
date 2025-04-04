@@ -360,7 +360,8 @@ export async function getCurrentUser(db: DrizzleD1Database, sessionToken: string
 // Updated implementation:
 export function getSessionToken(): string | undefined {
   try {
-    const cookieStore = cookies(); // ✅ `cookies()` is synchronous
+    // For Next.js 13+, cookies() is synchronous despite the warning
+    const cookieStore = cookies();
     const cookie = cookieStore.get('session_token');
 
     console.log("Cookie found:", cookie?.value ? "Yes" : "No");
@@ -375,7 +376,7 @@ export function getSessionToken(): string | undefined {
 
 export async function requireAuth(db: DrizzleD1Database, allowedTypes?: UserType[]): Promise<User> {
   try {
-    const sessionToken = getSessionToken(); // ✅ no need to await now
+    const sessionToken = getSessionToken();
 
     console.log("Session token in requireAuth:", sessionToken ? "Present" : "Missing");
 

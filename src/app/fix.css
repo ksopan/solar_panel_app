@@ -1,37 +1,32 @@
-/* Target all input types */
-input, 
-input[type="text"], 
-input[type="password"],
-input[type="email"],
-input[type="number"],
-input[type="search"],
-input[type="tel"],
-input[type="url"],
-textarea,
-select {
+/* Fix for text color in account summary section */
+
+/* Target paragraphs in the account summary section */
+.account-summary p,
+[class*="account-summary"] p,
+div p.capitalize {
   color: #000000 !important;
   -webkit-text-fill-color: #000000 !important;
-  caret-color: #000000 !important;
 }
 
-/* Ensure higher specificity for input elements */
-.dark input,
-.dark textarea,
-.dark select,
-body.dark input,
-body.dark textarea,
-body.dark select {
+/* Target general text in white background cards/sections */
+.bg-white p,
+.bg-background p,
+.rounded-lg p,
+.shadow p {
   color: #000000 !important;
   -webkit-text-fill-color: #000000 !important;
-  caret-color: #000000 !important;
 }
 
-/* Target any potentially styled wrappers or containers */
-.input-container input,
-.form-control,
-[class*="input"],
-[class*="textfield"] {
+/* Account summary specific containers */
+div:has(> h3.text-sm.font-medium.text-gray-500) > p {
   color: #000000 !important;
   -webkit-text-fill-color: #000000 !important;
-  caret-color: #000000 !important;
+}
+
+/* Override dark mode text colors in light background containers */
+.dark .bg-white p,
+.dark .rounded-lg p,
+.dark .shadow p {
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
 }
