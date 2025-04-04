@@ -173,9 +173,9 @@ export async function createAdminUser(
 ) {
   try {
     // Check if user already exists
-    const existingUser = await db.prepare(
-      'SELECT * FROM users WHERE email = ?'
-    ).bind(email).first();
+    const stmt = db.prepare("SELECT * FROM users WHERE email = ?");
+    const existingUser = stmt.get(email);  // `get()` returns first row
+    
     
     if (existingUser) {
       return { success: false, message: 'Email already registered' };

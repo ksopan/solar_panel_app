@@ -58,9 +58,9 @@ export async function POST(request: NextRequest) {
     const db = getDatabase(request.env);
 
     // Check if user already exists
-    const existingUser = await db.prepare("SELECT * FROM users WHERE email = ?")
-      .bind(email)
-      .first();
+    const stmt = db.prepare("SELECT * FROM users WHERE email = ?");
+    const existingUser = stmt.get(email);
+    
 
     if (existingUser) {
       return NextResponse.json(
